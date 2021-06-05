@@ -1,0 +1,191 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Sat Jan  9 19:40:13 2021
+# Quizas funcione a un 85%
+@author: Equipo 8
+"""
+from numpy import sin,cos,tan,pi,e
+
+#---------------------------------------------------------
+# Variables y constantes(el usuario los ingresa)
+
+# --------------------------------------------------------
+#Datos del tubo
+Diametro_interno = 0.1016 # en metros
+Diametro_externo = 0.114 # en metros
+#---------------------------------------------------------
+#Presiones
+P1_camara = 155  # PSI
+P1_Pascales = 1069000
+P2_Escape = 101325
+Temperatura_T1 = 296.15 # Kelvin
+
+#---------------------------------------------------------
+#Constantes del Propelente y gases
+Constante_de_la_tasa_gases = 0.0665
+Exponenete_de_Presion = 0.319
+Densidad_del_propelente = 1700 # Kg/m**3
+Razon_de_calor_especifico = 1.044
+Constantes_Gases = 195.71 #J/Kg*K
+#---------------------------------------------------------
+#Configuración de Granos
+Numero_Granos = 3
+Radio_interno_inicial = 0.05 # Todos en metros
+Radio_externo_inicial = 0.1
+Longitud_del_grano = 0.5
+Separacion = 0.001
+#---------------------------------------------------------
+#Adiccionales(Presión atmosfericas,Velocidad del sonido,acelerración gravitacional)
+P_Atmosferica = 101325 #Pa
+V_Sonido_Ambiente = 343.59 #m/s
+Acelracion_gravitacional = 9.81 #m/s**2
+Peso_Seco = 0 #Kg
+#---------------------------------------------------------
+#Datos de la tobera
+Angulo_Seccion_Convergente = 30
+Angulo_Seccion_Divergente = 15
+Longitud_de_Seccion_Interna = 0.003
+Eficiencia_de_Tobera = 0.85
+#---------------------------------------------------------
+
+
+# Valores no constantes (Calculos)
+#Sobre el grano
+Port_Area = pi*(Radio_interno_inicial)**2
+Longitud_Total_Combustible = Longitud_del_grano*3 + Separacion
+Volumen_de_Grano = pi*Longitud_del_grano*(((Radio_externo_inicial)**2) - (Radio_interno_inicial)**2)
+Masa_por_Grano = Volumen_de_Grano*Densidad_del_propelente
+print("Port_Area" , Port_Area)
+print("Longitud total combustible" , Longitud_Total_Combustible)
+print("Volumen del grano",Volumen_de_Grano)
+print("Masa por Grano" , Masa_por_Grano)
+#------------------------------------------------------------------------------------------------------------------------------------------
+#Volumenes Especificos
+Volumen_Especifico_recamara = (Temperatura_T1*Constantes_Gases)/P1_Pascales
+Volumen_Especifico_Garganta = Volumen_Especifico_recamara*((Razon_de_calor_especifico + 1)/2)**(1/(Razon_de_calor_especifico-1))
+Volumen_Especifico_escape = Volumen_Especifico_recamara*(P1_Pascales/P2_Escape)**(1/Razon_de_calor_especifico)
+print("Volumen en recamara", Volumen_Especifico_recamara)
+print("Volumen en garganta",Volumen_Especifico_Garganta)
+print("Volumen en escape",Volumen_Especifico_escape)
+#------------------------------------------------------------------------------------------------------------------------------------------
+# Presiones
+Presion_Garganta = P1_Pascales*(Volumen_Especifico_recamara/Volumen_Especifico_Garganta)**Razon_de_calor_especifico
+print("Presion en Garganta" , Presion_Garganta)
+#------------------------------------------------------------------------------------------------------------------------------------------
+#Temperaturas 
+Temperatura_Garganta = Temperatura_T1*(Volumen_Especifico_recamara/Volumen_Especifico_Garganta)**(Razon_de_calor_especifico-1)
+Temperatura_escape = Temperatura_T1*(P2_Escape/P1_Pascales)**((Razon_de_calor_especifico-1)/Razon_de_calor_especifico)
+print("Temperatura_Garganta", Temperatura_Garganta)
+print("Temperatura escape", Temperatura_escape)
+#------------------------------------------------------------------------------------------------------------------------------------------
+#Velocidades
+Velocidad_Garganta = (2*Razon_de_calor_especifico/(Razon_de_calor_especifico+1) *Constantes_Gases*Temperatura_T1)**.5
+Velocidad_Escape = (2*Razon_de_calor_especifico/(Razon_de_calor_especifico-1)*Constantes_Gases*Temperatura_T1*(1-(P2_Escape/P1_Pascales)**((Razon_de_calor_especifico-1)/Razon_de_calor_especifico)))**0.5
+Velocidad_Son_Local = (Razon_de_calor_especifico*Constantes_Gases*Temperatura_Garganta)**0.5
+Mach_Garganta = Velocidad_Garganta/Velocidad_Son_Local
+Velocidad_Caracteristica = (Constantes_Gases*Temperatura_T1/(Razon_de_calor_especifico*(2/(Razon_de_calor_especifico+1))**((Razon_de_calor_especifico+1)/(Razon_de_calor_especifico-1))))**0.5
+print("Velocidad Garganta", Velocidad_Garganta)
+print("Velocidad escape", Velocidad_Escape)
+print("Velocidad Sonido Local", Velocidad_Son_Local)
+print("Velocidad mach garganta", Mach_Garganta)
+print("Velocidad Caracteristica" , Velocidad_Caracteristica)
+#------------------------------------------------------------------------------------------------------------------------------------------
+# Datos de combustión
+Tasa_Quemado = Constante_de_la_tasa_gases*P1_camara**Exponenete_de_Presion*0.0254
+Tiempo_Quemado = (Radio_externo_inicial-Radio_interno_inicial)/Tasa_Quemado
+print("Tasa de quemado" , Tasa_Quemado)
+print("Tiempo de quemado" ,Tiempo_Quemado )
+T = 0
+Ri = 0.005
+Li = 0.035
+Ab = 0
+P = 0
+pp = 0
+Flu_mas_ins = 0
+empuje_ins = 0
+impulso_ins = []
+impulso_viejo= []
+for i in range (0,22):
+    if i != 0:
+        print("iteración",i)
+        T = T+0.04212906238
+        Ri = Radio_interno_inicial+(Tasa_Quemado*T)
+        Li = Longitud_del_grano-2*Tasa_Quemado*T
+        if i != 21 :
+            Ab = (2*pi*((Ri*Li)+(Radio_externo_inicial**2 -Ri**2)))
+            P = P + Ab
+            Volumen_Propelente =pi*3*Li*(Radio_externo_inicial**2-Ri**2)
+            masa_propelente = Densidad_del_propelente*Volumen_Propelente
+            Flu_mas_ins= Ab*Densidad_del_propelente*Tasa_Quemado
+            empuje_ins = Flu_mas_ins*Velocidad_Escape
+            pp = pp+empuje_ins
+        impulso_ins +=  [empuje_ins*(T-(T-0.04212906238))]
+        print("t", T, "Ri", Ri , "Li", Li ,"Ab", Ab,)
+        print("Vol Propelente", Volumen_Propelente,"m propelente", masa_propelente,"Flujo_inst",Flu_mas_ins)
+        print("Empuje inst",empuje_ins,i,impulso_ins)
+
+    if i == 0 :
+        Ab = (2*pi*((Ri*Li)+(Radio_externo_inicial**2 -Ri**2)))
+        print("t", T, "Ri", Ri , "Li", Li ,"Ab", Ab,)
+        Volumen_Propelente =pi*3*Longitud_del_grano*(Radio_externo_inicial**2-Ri**2)
+        masa_propelente = Densidad_del_propelente*Volumen_Propelente
+        print("Vol Propelente", Volumen_Propelente,"masa propelente", masa_propelente,"Flujo_inst",Flu_mas_ins)
+        print("Empuje inst",empuje_ins,"Impulso total", impulso_ins)
+
+"""for i in range(len(impulso_ins)):
+    if i == 0:
+        impulso_viejo += [impulso_ins[i]]
+    else:
+        impulso_viejo += [impulso_ins[i]-impulso_ins[i-1]]
+    print("vtgt",impulso_viejo[i], "iteraciones",i)"""
+impulso_total  = 0
+for i in range(1,len(impulso_ins)):
+    procs = impulso_ins[i]
+    impulso_total = impulso_total+procs
+    print("impulso total", impulso_total)
+ 
+P = P/22
+print("Valor Promedio de Area de Quemado",P)   
+Area_Quemado= P*3
+print("Valor de Area de Quemado",Area_Quemado)
+Flujo_Masico =  Area_Quemado*Densidad_del_propelente*Tasa_Quemado
+print("Flujo Masico", Flujo_Masico)
+#------------------------------------------------------------------------------------------------------------------------------------------
+#Calculo de fuerzas
+Empuje = Flujo_Masico*Velocidad_Escape
+print("Empuje",Empuje)
+Empuje_promedio = pp/22
+print("empuje_promeido",Empuje_promedio)
+#------------------------------------------------------------------------------------------------------------------------------------------
+#Impulsos
+impulso_Total_Teorico = Empuje*Tiempo_Quemado
+Impulso_Especifico_Teorico = Velocidad_Escape/9.81
+print("Impulso total", impulso_Total_Teorico)
+print ("Impulso,Especifico teorico", Impulso_Especifico_Teorico)
+#------------------------------------------------------------------------------------------------------------------------------------------
+#Areas
+Area_Garganta = Flujo_Masico*(Volumen_Especifico_Garganta/Velocidad_Garganta)
+Area_Escape = Flujo_Masico*(Volumen_Especifico_escape/Velocidad_Escape)
+print("Area Garganta", Area_Garganta)
+print("area de escape", Area_Escape)
+#------------------------------------------------------------------------------------------------------------------------------------------
+# Radios
+Radio_Garganta = (Area_Garganta*(10**4 / pi))**0.5
+Radio_Escape = (Area_Escape*(10**4 /pi))**0.5
+print("Radio Garganta",Radio_Garganta)
+print(" Radio Escape", Radio_Escape)
+#------------------------------------------------------------------------------------------------------------------------------------------
+#Rendimiento
+Port_to_throat_Ratio = Port_Area/Area_Garganta
+print("evitar quemado erosivo", Port_to_throat_Ratio)
+kn = Area_Quemado/Area_Garganta
+print("Kn", kn)
+#------------------------------------------------------------------------------------------------------------------------------------------
+#otros de tobera
+Longitud_divergente = (Radio_Escape-Radio_Garganta)/tan((1/6)*pi)
+h = (Diametro_externo/2)-Radio_Garganta
+Longitud_convergente = h/tan(15)
+Longitud_tobera = Longitud_convergente+Longitud_divergente
+print("longitud divergente", Longitud_divergente)
+print("longitud convergente", Longitud_convergente)
+print ("Longitud tobera",Longitud_tobera)
